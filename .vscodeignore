@@ -1,0 +1,8 @@
+**/*
+!package.json
+!README.md
+!extension.js
+!src/
+!src/smart-paste.js
+!scripts/
+!scripts/contains-image.ps1
