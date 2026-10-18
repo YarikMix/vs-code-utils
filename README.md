@@ -21,12 +21,25 @@ V и C заданы физическими клавишами `[KeyV]` и `[KeyC
 
 Установите готовый `codex-smart-paste-0.2.0.vsix` через **Extensions: Install from VSIX...** в локальном Windows VS Code, в разделе **Local — Installed**. Идентификатор: `local.codex-smart-paste`. Установка в WSL extension host не подходит: проверка использует Windows-буфер обмена.
 
-При установке из Windows CLI:
+Готовый VSIX и контрольная сумма доступны в [релизе v0.2.0](https://github.com/YarikMix/vs-code-utils/releases/tag/v0.2.0). Для установки из Windows PowerShell скачайте оба файла, проверьте SHA256 и запустите Windows CLI:
 
 ```powershell
-& "$env:LOCALAPPDATA\Programs\Microsoft VS Code\bin\code.cmd" --install-extension 'C:\path\to\codex-smart-paste-0.2.0.vsix' --force
+$base = 'https://github.com/YarikMix/vs-code-utils/releases/download/v0.2.0'
+$vsix = Join-Path $env:TEMP 'codex-smart-paste-0.2.0.vsix'
+$checksums = Join-Path $env:TEMP 'codex-smart-paste-0.2.0-SHA256SUMS.txt'
+
+Invoke-WebRequest "$base/codex-smart-paste-0.2.0.vsix" -OutFile $vsix -UseBasicParsing -ErrorAction Stop
+Invoke-WebRequest "$base/SHA256SUMS.txt" -OutFile $checksums -UseBasicParsing -ErrorAction Stop
+$expected = ((Get-Content $checksums -Raw -ErrorAction Stop).Trim() -split '\s+')[0]
+if ((Get-FileHash $vsix -Algorithm SHA256 -ErrorAction Stop).Hash -ne $expected) {
+    throw 'SHA256 не совпадает; установка отменена.'
+}
+
+& "$env:LOCALAPPDATA\Programs\Microsoft VS Code\bin\code.cmd" --install-extension $vsix --force
 & "$env:LOCALAPPDATA\Programs\Microsoft VS Code\bin\code.cmd" --list-extensions --show-versions
 ```
+
+Ссылка закреплена на версии 0.2.0; для обновления используйте файлы и ссылки из нужного релиза. Bun и Node.js отдельно устанавливать для использования расширения не нужно.
 
 Если сборка находится в WSL, сначала скопируйте VSIX в локальный каталог Windows (например, `%TEMP%`), затем используйте **Install from VSIX...** или Windows CLI с локальным Windows-путём. CLI может блокировать доступ к UNC-пути `\\wsl.localhost`; изменение настроек безопасности для установки не требуется. Существующую версию можно оставить установленной до готовности нового VSIX. Обновление расширения не требует изменения `keybindings.json` и его резервных копий. Пользовательские привязки имеют приоритет над привязками расширения; при конфликте проверьте их вручную.
 
