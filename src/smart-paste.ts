@@ -1,9 +1,21 @@
-'use strict';
+export type TerminalTarget = Pick<import('vscode').Terminal, 'sendText'>;
 
-function createSmartPaste({ getActiveTerminal, containsImage, pasteText, reportError }) {
+export interface SmartPasteDependencies {
+  getActiveTerminal(): TerminalTarget | undefined;
+  containsImage(): Promise<boolean>;
+  pasteText(): PromiseLike<unknown>;
+  reportError(message: string): unknown;
+}
+
+export function createSmartPaste({
+  getActiveTerminal,
+  containsImage,
+  pasteText,
+  reportError,
+}: SmartPasteDependencies): () => Promise<void> {
   let pending = false;
 
-  return async function smartPaste() {
+  return async function smartPaste(): Promise<void> {
     if (pending) return;
     const terminal = getActiveTerminal();
     if (!terminal) return;
@@ -25,5 +37,3 @@ function createSmartPaste({ getActiveTerminal, containsImage, pasteText, reportE
     }
   };
 }
-
-module.exports = { createSmartPaste };

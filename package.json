@@ -3,16 +3,21 @@
   "displayName": "Codex Smart Paste",
   "description": "Route terminal paste to Codex image paste or ordinary text paste on Windows.",
   "publisher": "local",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "engines": {
     "vscode": "^1.85.0"
   },
   "categories": ["Other"],
-  "main": "./extension.js",
+  "main": "dist/extension.cjs",
   "extensionKind": ["ui"],
   "activationEvents": ["onCommand:local.codexSmartPaste.paste"],
   "scripts": {
-    "test": "node --test"
+    "test": "bun run test:unit",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.runtime.json",
+    "build": "bun scripts/build.ts",
+    "test:unit": "bun test",
+    "test:integration": "bun dist/test/integration/run.cjs",
+    "package": "bun run typecheck && bun run build && vsce package --no-dependencies --out codex-smart-paste-0.2.0.vsix"
   },
   "contributes": {
     "configurationDefaults": {
@@ -54,5 +59,13 @@
         "when": "terminalFocus"
       }
     ]
+  },
+  "packageManager": "bun@1.4.2",
+  "devDependencies": {
+    "@types/bun": "1.4.3",
+    "@types/node": "18.19.130",
+    "@types/vscode": "1.85.0",
+    "typescript": "7.0.2",
+    "esbuild": "0.28.2"
   }
 }
