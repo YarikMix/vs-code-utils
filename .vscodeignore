@@ -1,8 +1,5 @@
 **/*
 !package.json
 !README.md
-!extension.js
-!src/
-!src/smart-paste.js
-!scripts/
+!dist/extension.cjs
 !scripts/contains-image.ps1
