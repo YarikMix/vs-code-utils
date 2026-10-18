@@ -12,3 +12,15 @@ await build({
   format: 'cjs',
   external: ['vscode'],
 });
+
+for (const name of ['run', 'suite']) {
+  await build({
+    entryPoints: [path.join(root, `test/integration/${name}.ts`)],
+    outfile: path.join(root, `dist/test/integration/${name}.cjs`),
+    bundle: true,
+    platform: 'node',
+    target: 'node18',
+    format: 'cjs',
+    external: ['vscode', '@vscode/test-electron'],
+  });
+}
