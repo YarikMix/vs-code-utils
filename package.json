@@ -1,0 +1,73 @@
+{
+  "name": "codex-smart-paste",
+  "displayName": "Codex Smart Paste",
+  "description": "Route terminal paste to Codex image paste or ordinary text paste on Windows.",
+  "publisher": "local",
+  "version": "0.2.0",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": ["Other"],
+  "main": "dist/extension.cjs",
+  "extensionKind": ["ui"],
+  "activationEvents": ["onCommand:local.codexSmartPaste.paste"],
+  "scripts": {
+    "test": "bun run test:unit",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.runtime.json",
+    "build": "bun scripts/build.ts",
+    "test:unit": "bun test",
+    "test:integration": "bun run build && node dist/test/integration/run.cjs",
+    "package": "bun run typecheck && bun run build && vsce package --no-dependencies --allow-missing-repository --skip-license --out codex-smart-paste-0.2.0.vsix"
+  },
+  "contributes": {
+    "configurationDefaults": {
+      "terminal.integrated.commandsToSkipShell": ["local.codexSmartPaste.paste"]
+    },
+    "commands": [
+      {
+        "command": "local.codexSmartPaste.paste",
+        "title": "Codex: Smart Paste in Terminal"
+      }
+    ],
+    "keybindings": [
+      {
+        "key": "ctrl+[KeyV]",
+        "command": "local.codexSmartPaste.paste",
+        "when": "terminalFocus"
+      },
+      {
+        "key": "alt+[KeyV]",
+        "command": "workbench.action.terminal.sendSequence",
+        "args": { "text": "\u001bv" },
+        "when": "terminalFocus"
+      },
+      {
+        "key": "ctrl+[KeyC]",
+        "command": "workbench.action.terminal.copySelection",
+        "when": "terminalFocus && terminalTextSelected"
+      },
+      {
+        "key": "ctrl+enter",
+        "command": "workbench.action.terminal.sendSequence",
+        "args": { "text": "\u001b[13;2u" },
+        "when": "terminalFocus"
+      },
+      {
+        "key": "shift+enter",
+        "command": "workbench.action.terminal.sendSequence",
+        "args": { "text": "\u001b[13;2u" },
+        "when": "terminalFocus"
+      }
+    ]
+  },
+  "packageManager": "bun@1.4.2",
+  "devDependencies": {
+    "@types/bun": "1.4.3",
+    "@types/node": "18.19.130",
+    "@types/vscode": "1.85.0",
+    "@vscode/test-electron": "3.1.0",
+    "@vscode/vsce": "4.0.0",
+    "esbuild": "0.28.2",
+    "typescript": "7.0.2"
+  }
+}
