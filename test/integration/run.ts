@@ -7,6 +7,7 @@ import path from 'node:path';
 // This file is compiled as ordinary Node CommonJS; neither launcher nor suite uses Bun APIs.
 const root = path.resolve(__dirname, '../../..');
 const executable = process.env.VSCODE_EXECUTABLE_PATH;
+const packages = ['codex-smart-paste', 'codex-terminal-tool'];
 
 async function waitForChild(command: string, args: string[], env = process.env, timeout = false): Promise<void> {
   const child = spawn(command, args, { stdio: 'inherit', env, detached: timeout && process.platform !== 'win32' });
@@ -64,7 +65,10 @@ async function stageRunnerDependencies(destination: string): Promise<void> {
     copied.add(directory);
     const relative = path.relative(root, directory);
     if (relative.startsWith('..')) throw new Error(`Runner dependency is outside the repository: ${name}`);
-    await cp(directory, path.join(destination, relative), { recursive: true });
+    // Materialize Bun's symlinked packages as ordinary Windows-readable directories.
+    const target = path.join(destination, 'node_modules', name);
+    await mkdir(path.dirname(target), { recursive: true });
+    await cp(directory, target, { recursive: true, dereference: true });
     for (const dependency of Object.keys(manifest.dependencies ?? {})) await copyDependency(dependency, directory);
   }
   await copyDependency('@vscode/test-electron', root);
@@ -78,15 +82,26 @@ async function runWindowsFromWsl(windowsExecutable: string): Promise<void> {
   const stage = await mkdtemp(path.join(temp, 'codex-terminal-tool-integration-'));
   console.log(`Windows integration staging: ${stage}`);
   try {
-    for (const file of ['package.json', 'README.md', 'dist/extension.cjs', 'dist/test/integration/run.cjs', 'dist/test/integration/suite.cjs', 'scripts/contains-image.ps1', 'scripts/open-session.ps1']) {
+    const files = ['package.json', 'dist/test/integration/run.cjs', 'dist/test/integration/suite.cjs'];
+    for (const name of packages) {
+      const script = name === 'codex-smart-paste' ? 'contains-image' : 'open-session';
+      for (const file of ['package.json', 'README.md', 'dist/extension.cjs', `scripts/${script}.ps1`]) {
+        files.push(`extensions/${name}/${file}`);
+      }
+    }
+    for (const file of files) {
       const target = path.join(stage, file);
       await mkdir(path.dirname(target), { recursive: true });
       await cp(path.join(root, file), target);
     }
     await stageRunnerDependencies(stage);
+    if (process.env.CODEX_INTEGRATION_WSL_EXTENSION) {
+      await cp(process.env.CODEX_INTEGRATION_WSL_EXTENSION, path.join(stage, 'remote-wsl'), { recursive: true, dereference: true });
+    }
     const forwarded = new Set((process.env.WSLENV ?? '').split(':').filter(Boolean));
     forwarded.add('ELECTRON_RUN_AS_NODE');
     forwarded.add('VSCODE_EXECUTABLE_PATH');
+    for (const name of ['CODEX_INTEGRATION_WSL_DISTRO', 'CODEX_INTEGRATION_WSL_WORKSPACE']) forwarded.add(name);
     await waitForChild(windowsExecutable, [toWindows(path.join(stage, 'dist/test/integration/run.cjs'))], {
       ...process.env,
       ELECTRON_RUN_AS_NODE: '1',
@@ -104,12 +119,28 @@ async function main(): Promise<void> {
     await runWindowsFromWsl(executable);
     return;
   }
+  if (process.env.CODEX_INTEGRATION_WSL_DISTRO) {
+    const coordination = await mkdtemp(path.join(os.tmpdir(), 'codex-two-window-'));
+    try {
+      const results = await Promise.allSettled(['window-a', 'window-b'].map((mode) => runProfile(mode, coordination)));
+      const failures = results.filter((result): result is PromiseRejectedResult => result.status === 'rejected');
+      if (failures.length) throw new AggregateError(failures.map((result) => result.reason), 'Two-window WSL check failed');
+    } finally {
+      await rm(coordination, { recursive: true, force: true });
+    }
+  } else {
+    for (const mode of ['both', 'terminal-only', 'smart-only']) await runProfile(mode);
+  }
+}
+
+async function runProfile(mode: string, coordination?: string): Promise<void> {
   const scratch = await mkdtemp(path.join(os.tmpdir(), 'codex-terminal-tool-profile-'));
-  console.log(`Isolated VS Code integration profile: ${scratch}`);
+  console.log(`Isolated VS Code integration profile (${mode}): ${scratch}`);
   try {
     const user = path.join(scratch, 'user-data', 'User');
     await mkdir(user, { recursive: true });
     await mkdir(path.join(scratch, 'extensions'));
+    if (coordination) await cp(path.join(root, 'remote-wsl'), path.join(scratch, 'extensions', 'remote-wsl'), { recursive: true });
     await writeFile(path.join(user, 'settings.json'), JSON.stringify({
       'workbench.startupEditor': 'none',
       'update.mode': 'none',
@@ -120,7 +151,9 @@ async function main(): Promise<void> {
       'terminal.integrated.enablePersistentSessions': false,
     }));
     // A separate worker lets the watchdog kill only this test's process tree.
-    await waitForChild(process.execPath, [__filename, '--worker', scratch], process.env, true);
+    await waitForChild(process.execPath, [__filename, '--worker', scratch, mode], {
+      ...process.env, CODEX_INTEGRATION_COORDINATION: coordination,
+    }, true);
   } finally {
     await rm(scratch, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 });
     console.log(`Removed isolated VS Code integration profile: ${scratch}`);
@@ -130,13 +163,24 @@ async function main(): Promise<void> {
 async function worker(scratch: string): Promise<void> {
   // Code.exe runs the launcher as Node; the Extension Development Host must run as Electron.
   delete process.env.ELECTRON_RUN_AS_NODE;
+  const mode = process.argv[4] ?? 'both';
+  const selected = mode === 'terminal-only' ? ['codex-terminal-tool']
+    : mode === 'smart-only' ? ['codex-smart-paste'] : packages;
   await runTests({
     vscodeExecutablePath: executable,
-    extensionDevelopmentPath: root,
+    extensionDevelopmentPath: selected.map((name) => path.join(root, 'extensions', name)),
     extensionTestsPath: path.join(__dirname, 'suite.cjs'),
-    extensionTestsEnv: { ELECTRON_RUN_AS_NODE: undefined },
+    extensionTestsEnv: {
+      ELECTRON_RUN_AS_NODE: undefined,
+      CODEX_INTEGRATION_MODE: mode,
+      CODEX_INTEGRATION_COORDINATION: process.env.CODEX_INTEGRATION_COORDINATION,
+    },
     launchArgs: [
-      '--new-window', '--disable-extensions', '--disable-gpu', '--disable-updates',
+      '--new-window', '--disable-gpu', '--disable-updates',
+      ...(process.env.CODEX_INTEGRATION_WSL_DISTRO ? [
+        '--remote', `wsl+${process.env.CODEX_INTEGRATION_WSL_DISTRO}`,
+        '--folder-uri', `vscode-remote://wsl+${process.env.CODEX_INTEGRATION_WSL_DISTRO}${process.env.CODEX_INTEGRATION_WSL_WORKSPACE}`,
+      ] : ['--disable-extensions']),
       '--skip-welcome', '--skip-release-notes',
       `--user-data-dir=${path.join(scratch, 'user-data')}`,
       `--extensions-dir=${path.join(scratch, 'extensions')}`,
