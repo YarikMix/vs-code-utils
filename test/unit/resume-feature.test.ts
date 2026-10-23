@@ -2,7 +2,7 @@ import { expect, test } from 'bun:test';
 import type { ExtensionContext } from 'vscode';
 import { activateResumeFeature, type ResumeFeatureDependencies } from '../../src/resume-feature.ts';
 
-test('activation exposes a window-specific bridge and resumes into an editor terminal', async () => {
+test('activation exposes a window-specific bridge and resumes into a panel terminal', async () => {
   const variables = new Map<string, string>();
   let persistent = true;
   let closed = false;
@@ -19,7 +19,7 @@ test('activation exposes a window-specific bridge and resumes into an editor ter
     },
   } as unknown as Pick<ExtensionContext, 'subscriptions' | 'asAbsolutePath' | 'environmentVariableCollection'>;
   const dependencies: ResumeFeatureDependencies = {
-    editorLocation: 2,
+    terminalLocation: 1,
     createTerminal: (options) => {
       actions.push(options);
       return {
@@ -40,7 +40,7 @@ test('activation exposes a window-specific bridge and resumes into an editor ter
   expect(launch).toBeDefined();
   launch!('01a14ff0-3f2d-7d71-b4e5-0b63839ec381');
   expect(actions).toEqual([
-    { name: 'Codex', location: 2 },
+    { name: 'Codex', location: 1 },
     'show',
     ['codex resume 01a14ff0-3f2d-7d71-b4e5-0b63839ec381', true],
   ]);

@@ -84,7 +84,7 @@ export async function run(): Promise<void> {
   assert.ok((await vscode.commands.getCommands(true)).includes('local.codexOps.paste'));
   assert.equal(extension.packageJSON.main, 'dist/extension.cjs');
   await access(path.join(extension.extensionPath, extension.packageJSON.main));
-  assert.equal(extension.packageJSON.version, '0.3.0');
+  assert.equal(extension.packageJSON.version, '0.3.1');
   assert.deepEqual(extension.packageJSON.extensionKind, ['ui']);
   assert.deepEqual(extension.packageJSON.activationEvents, ['onStartupFinished', 'onCommand:local.codexOps.paste']);
   assert.equal(extension.packageJSON.engines.vscode, '^1.85.0');

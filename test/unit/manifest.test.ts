@@ -17,7 +17,7 @@ test('manifest activates the UI extension with exact terminal-only physical shor
   expect(manifest.engines.vscode).toBe('^1.85.0');
   expect(manifest.name).toBe('codex-ops');
   expect(manifest.publisher).toBe('local');
-  expect(manifest.version).toBe('0.3.0');
+  expect(manifest.version).toBe('0.3.1');
   expect(manifest.contributes.commands).toEqual([{ command: 'local.codexOps.paste', title: 'Codex: Smart Paste in Terminal' }]);
   expect(manifest.contributes.keybindings).toEqual([
     { key: 'ctrl+[KeyV]', command: 'local.codexOps.paste', when: 'terminalFocus' },
