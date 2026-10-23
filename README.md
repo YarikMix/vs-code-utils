@@ -1,6 +1,22 @@
-# Codex Smart Paste
+# Codex Ops
 
-Локальное расширение Windows VS Code для Codex во встроенном терминале, включая терминалы WSL. Проверка формата Windows-буфера выполняется на Windows в UI extension host (`extensionKind: ui`). Внешние сервисы и зависимости времени выполнения не нужны.
+Локальное расширение Windows VS Code для работы с Codex во встроенных терминалах, включая WSL. Оно сохраняет Smart Paste и позволяет агенту открыть найденную сессию Codex в новой вкладке текущего окна VS Code.
+
+## Запуск сессии из терминала WSL
+
+В терминале, созданном после активации расширения, агент выполняет:
+
+```sh
+powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "$CODEX_OPS_HELPER" -Endpoint "$CODEX_OPS_ENDPOINT" -SessionId 01a14ff0-3f2d-7d71-b4e5-0b63839ec381
+```
+
+Замените UUID на ID нужной сессии. Расширение создаст новую вкладку терминала в **том же окне VS Code** и запустит `codex resume <UUID>`. Команда PowerShell возвращает ошибку, если запрос не дошёл до расширения. Агент может вызывать её через обычный shell tool; изменения Codex CLI не требуются.
+
+Для каждого окна расширение поднимает собственный локальный канал на `127.0.0.1` со случайным токеном. Адрес передаётся только новым терминалам этого окна через `CODEX_OPS_ENDPOINT`; путь к скрипту — через `CODEX_OPS_HELPER`. Запрос принимает только UUID, поэтому в терминал нельзя передать произвольную команду через этот канал. Переменные отсутствуют в уже работающих терминалах: после установки и **Developer: Reload Window** откройте новый терминал или новую сессию Codex. При нескольких окнах запускайте команду из терминала нужного окна.
+
+Новый терминал использует профиль и рабочую папку, заданные VS Code для этого окна. В WSL-окне с профилем WSL `codex resume` запускается в WSL. Если переменные пусты, проверьте, что `Codex Ops` установлен в **Local — Installed**, расширение активно и терминал был создан после его активации.
+
+## Smart Paste
 
 | Сочетание в терминале | Действие |
 | --- | --- |
@@ -8,78 +24,31 @@
 | Alt+V / Alt+М | Отправить Codex Alt+v для вставки изображения |
 | Ctrl+C / Ctrl+С с выделением | Копировать выделенный текст терминала |
 | Ctrl+C без выделения | Сохраняется штатное прерывание |
-| Ctrl+Enter, Shift+Enter | Отправить `ESC[13;2u` для переноса строки в Codex, без отправки промпта |
-| Ctrl+Shift+V | Сохраняется штатная вставка текста VS Code |
+| Ctrl+Enter, Shift+Enter | Отправить `ESC[13;2u` для переноса строки в Codex |
 
-V и C заданы физическими клавишами `[KeyV]` и `[KeyC]`, предназначенными для английской и русской раскладок. Все пять привязок расширения ограничены фокусом терминала. Фактическую работу клавиатуры в обеих раскладках нужно проверить вручную. Расширение не проверяет, запущен ли Codex: команды вставки изображения предназначены для терминала с Codex.
+V и C заданы физическими клавишами `[KeyV]` и `[KeyC]`. Привязки действуют только при фокусе терминала. Расширение добавляет `local.codexOps.paste` в значение по умолчанию `terminal.integrated.commandsToSkipShell`. Если вы задаёте собственный массив этой настройки, включите команду вручную. `terminal.integrated.sendKeybindingsToShell: true` может перехватить сочетание раньше расширения.
 
-Расширение добавляет `local.codexSmartPaste.paste` в значение по умолчанию `terminal.integrated.commandsToSkipShell`, чтобы терминал передавал Ctrl+V команде VS Code. Встроенные исключения VS Code сохраняются. Если вы задаёте собственный массив этой настройки в пользовательских настройках или настройках рабочей области, включите в него `local.codexSmartPaste.paste`. Настройка `terminal.integrated.sendKeybindingsToShell: true` имеет приоритет над этим списком и может передавать сочетание оболочке; для работы Smart Paste оставьте её выключенной.
+Проверка изображения выполняется через PowerShell на Windows стороне VS Code. Буфер не сохраняется и не меняется; проверка возвращает только `true`/`false`. Таймаут — 3 секунды. При ошибке автоматической вставки нет.
 
-Изображение имеет приоритет, если буфер содержит и изображение, и текст. PowerShell в STA-режиме возвращает только `true`/`false`; содержимое буфера не сохраняется, не логируется и не меняется. При ошибке или таймауте 3 секунды показывается сообщение без автоматической вставки. Повторное нажатие во время проверки игнорируется; смена активного терминала отменяет вставку. Буфер может измениться между проверкой и вставкой.
+## Установка
 
-## Установка и обновление
+Установите `codex-ops-0.3.0.vsix` через **Extensions: Install from VSIX...** в локальном Windows VS Code либо Windows CLI `code.cmd --install-extension <путь-к-vsix> --force`. Технический ID нового расширения — `local.codex-ops`. Старый `local.codex-smart-paste` удалите, иначе его Ctrl+V-привязка останется конкурентом новой команды. После установки выполните **Developer: Reload Window** и откройте новый WSL-терминал. Bun и Node.js пользователю расширения не нужны.
 
-Установите готовый `codex-smart-paste-0.2.0.vsix` через **Extensions: Install from VSIX...** в локальном Windows VS Code, в разделе **Local — Installed**. Идентификатор: `local.codex-smart-paste`. Установка в WSL extension host не подходит: проверка использует Windows-буфер обмена.
+Если VSIX собран в WSL, скопируйте его в обычный каталог Windows перед установкой. Прямой UNC-путь `\\wsl.localhost` может блокироваться Windows CLI. Установка и перезагрузка окна прерывают работающие в нём терминалы, поэтому сначала завершите их или сохраните нужные сессии Codex.
 
-Готовый VSIX и контрольная сумма доступны в [релизе v0.2.0](https://github.com/YarikMix/vs-code-utils/releases/tag/v0.2.0). Для установки из Windows PowerShell скачайте оба файла, проверьте SHA256 и запустите Windows CLI:
+## Разработка
 
-```powershell
-$base = 'https://github.com/YarikMix/vs-code-utils/releases/download/v0.2.0'
-$vsix = Join-Path $env:TEMP 'codex-smart-paste-0.2.0.vsix'
-$checksums = Join-Path $env:TEMP 'codex-smart-paste-0.2.0-SHA256SUMS.txt'
-
-Invoke-WebRequest "$base/codex-smart-paste-0.2.0.vsix" -OutFile $vsix -UseBasicParsing -ErrorAction Stop
-Invoke-WebRequest "$base/SHA256SUMS.txt" -OutFile $checksums -UseBasicParsing -ErrorAction Stop
-$expected = ((Get-Content $checksums -Raw -ErrorAction Stop).Trim() -split '\s+')[0]
-if ((Get-FileHash $vsix -Algorithm SHA256 -ErrorAction Stop).Hash -ne $expected) {
-    throw 'SHA256 не совпадает; установка отменена.'
-}
-
-& "$env:LOCALAPPDATA\Programs\Microsoft VS Code\bin\code.cmd" --install-extension $vsix --force
-& "$env:LOCALAPPDATA\Programs\Microsoft VS Code\bin\code.cmd" --list-extensions --show-versions
-```
-
-Ссылка закреплена на версии 0.2.0; для обновления используйте файлы и ссылки из нужного релиза. Bun и Node.js отдельно устанавливать для использования расширения не нужно.
-
-Если сборка находится в WSL, сначала скопируйте VSIX в локальный каталог Windows (например, `%TEMP%`), затем используйте **Install from VSIX...** или Windows CLI с локальным Windows-путём. CLI может блокировать доступ к UNC-пути `\\wsl.localhost`; изменение настроек безопасности для установки не требуется. Существующую версию можно оставить установленной до готовности нового VSIX. Обновление расширения не требует изменения `keybindings.json` и его резервных копий. Пользовательские привязки имеют приоритет над привязками расширения; при конфликте проверьте их вручную.
-
-После установки выполните **Developer: Reload Window**. Проверьте в Codex текст и скриншот через Ctrl+V в английской и русской раскладках, Alt+V, Ctrl+C с выделением и без, Ctrl+Enter и Shift+Enter. Последние два сочетания должны переносить строку без отправки промпта. Автоматические тесты не заменяют эту проверку клавиатуры и отображения вложения.
-
-## Разработка и проверки
-
-Нужны Bun 1.4.2 и Node.js 22+ для инструментов VS Code (`@vscode/test-electron`, `@vscode/vsce`). Зависимости устанавливаются локально из `bun.lock`; глобальные пакеты и постоянное изменение политики PowerShell не нужны.
+Нужны Bun 1.4.x и Node.js 22+ для тестового VS Code и упаковки.
 
 ```sh
 bun install --frozen-lockfile
 bun run typecheck
 bun run test:unit
 bun run build
-bun run test:integration
+VSCODE_EXECUTABLE_PATH='/mnt/c/Users/olegg/AppData/Local/Programs/Microsoft VS Code/Code.exe' bun run test:integration
 bun run package
 ```
 
-| Команда | Результат |
-| --- | --- |
-| `bun run typecheck` | `tsc --noEmit` для проекта и отдельная проверка runtime с типами Node 18 / VS Code 1.85 без типов Bun |
-| `bun run test:unit` (или `bun test`, `bun run test`) | Модульные тесты Bun из `test/unit`; Electron suite не попадает в автоматический поиск |
-| `bun run build` | esbuild собирает `dist/extension.cjs` и отдельные интеграционные runner/suite |
-| `bun run test:integration` | Сборка и запуск отдельного настоящего VS Code Extension Development Host |
-| `bun run package` | Проверка типов, сборка и локальный `@vscode/vsce`; создаёт `codex-smart-paste-0.2.0.vsix` без runtime-зависимостей |
+Для интеграции замените путь на установленный Windows `Code.exe`. Тест запускает отдельный Extension Development Host с временным профилем и не использует текущий профиль VS Code. Unit-тесты проверяют локальный канал, валидацию запроса, выбор вкладки и окружение; Electron-тест проверяет активацию и Smart Paste. Реальное взаимодействие WSL, PowerShell и нескольких окон нужно проверить вручную после установки.
 
-Исходники расширения находятся в `src/*.ts`, PowerShell-ресурс — в `scripts/contains-image.ps1`. Runtime выполняется в Node extension host VS Code, собирается как CommonJS с целью Node 18 и внешним `vscode`; Bun используется для разработки и не требуется пользователю расширения. Минимум VS Code сохраняется: `^1.85.0`. VSIX содержит только манифест, README, `dist/extension.cjs`, PowerShell-ресурс и служебные метаданные упаковки; тесты, исходники TypeScript, документы разработки, `node_modules` и lockfile исключены.
-
-По умолчанию `@vscode/test-electron` загружает тестовый VS Code. Можно выбрать имеющийся исполняемый файл через `VSCODE_EXECUTABLE_PATH`. Для проверки Windows VS Code из WSL:
-
-```sh
-VSCODE_EXECUTABLE_PATH='/mnt/c/Users/olegg/AppData/Local/Programs/Microsoft VS Code/Code.exe' bun run test:integration
-```
-
-Замените путь на свой Windows `Code.exe`. Launcher автоматически переносит необходимые файлы во временный каталог Windows, запускает native Windows Electron с временными user-data/extensions directories и удаляет их после завершения. Существующий профиль пользователя не используется. Ненулевой результат тестов передаётся вызывающему процессу; ожидание ограничено watchdog.
-
-Интеграционная suite проверяет активацию собранного entrypoint, регистрацию команды, эффективное `commandsToSkipShell`, пять точных привязок и байты трёх последовательностей через настоящий Pseudoterminal. На Windows она также запускает PowerShell-ресурс и проверяет boolean-результат без изменения буфера. Эти проверки не имитируют физические нажатия, переключение раскладок или появление изображения в Codex; ручная проверка выше остаётся обязательной. Suite не отправляет сообщения в Codex или Telegram.
-
-## Откат
-
-Для возврата к предыдущей версии сохраните прежний VSIX до обновления и установите его через **Install from VSIX...** либо Windows CLI с `--force`; затем выполните **Developer: Reload Window**. Для 0.1.0 пакет можно взять из предыдущего коммита репозитория. Пользовательские привязки при обновлении и откате версии менять не требуется.
-
-Чтобы полностью удалить расширение, используйте **Uninstall** в локальном Windows VS Code или `code.cmd --uninstall-extension local.codex-smart-paste`. Если до первоначальной установки сочетания были настроены вручную, восстановите только нужные записи из своей резервной копии `keybindings.json`, сохранив остальные текущие изменения. Для обычной вставки Ctrl+V должна указывать на `workbench.action.terminal.paste` при `terminalFocus`. Выполните **Developer: Reload Window**.
+Исходники — `src/*.ts`, Windows-скрипты — `scripts/*.ps1`. Runtime собирается как CommonJS для Node 18 с внешним модулем `vscode`; расширение требует VS Code `^1.85.0`.

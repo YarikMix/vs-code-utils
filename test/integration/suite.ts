@@ -12,7 +12,7 @@ interface Keybinding {
 }
 
 const expectedBindings: Keybinding[] = [
-  { key: 'ctrl+[KeyV]', command: 'local.codexSmartPaste.paste', when: 'terminalFocus' },
+  { key: 'ctrl+[KeyV]', command: 'local.codexOps.paste', when: 'terminalFocus' },
   { key: 'alt+[KeyV]', command: 'workbench.action.terminal.sendSequence', args: { text: '\u001bv' }, when: 'terminalFocus' },
   { key: 'ctrl+[KeyC]', command: 'workbench.action.terminal.copySelection', when: 'terminalFocus && terminalTextSelected' },
   { key: 'ctrl+enter', command: 'workbench.action.terminal.sendSequence', args: { text: '\u001b[13;2u' }, when: 'terminalFocus' },
@@ -77,19 +77,20 @@ async function checkSequence(binding: Keybinding): Promise<void> {
 }
 
 export async function run(): Promise<void> {
-  const extension = vscode.extensions.getExtension('local.codex-smart-paste');
+  const extension = vscode.extensions.getExtension('local.codex-ops');
   assert.ok(extension, 'The development extension must be installed');
   await extension.activate();
   assert.equal(extension.isActive, true);
-  assert.ok((await vscode.commands.getCommands(true)).includes('local.codexSmartPaste.paste'));
+  assert.ok((await vscode.commands.getCommands(true)).includes('local.codexOps.paste'));
   assert.equal(extension.packageJSON.main, 'dist/extension.cjs');
   await access(path.join(extension.extensionPath, extension.packageJSON.main));
-  assert.equal(extension.packageJSON.version, '0.2.0');
+  assert.equal(extension.packageJSON.version, '0.3.0');
   assert.deepEqual(extension.packageJSON.extensionKind, ['ui']);
+  assert.deepEqual(extension.packageJSON.activationEvents, ['onStartupFinished', 'onCommand:local.codexOps.paste']);
   assert.equal(extension.packageJSON.engines.vscode, '^1.85.0');
   assert.deepEqual(extension.packageJSON.contributes.keybindings, expectedBindings);
   const skipShell = vscode.workspace.getConfiguration('terminal.integrated').get<string[]>('commandsToSkipShell');
-  assert.ok(skipShell?.includes('local.codexSmartPaste.paste'), 'Effective terminal defaults must skip the shell');
+  assert.ok(skipShell?.includes('local.codexOps.paste'), 'Effective terminal defaults must skip the shell');
   console.log('PASS compiled runtime activation, command registration, effective defaults and five manifest bindings');
 
   for (const binding of extension.packageJSON.contributes.keybindings as Keybinding[]) {
@@ -98,6 +99,7 @@ export async function run(): Promise<void> {
 
   const scriptPath = path.join(extension.extensionPath, 'scripts', 'contains-image.ps1');
   await access(scriptPath);
+  await access(path.join(extension.extensionPath, 'scripts', 'open-session.ps1'));
   if (process.platform === 'win32') {
     assert.equal(typeof await containsImage(scriptPath), 'boolean');
     console.log('PASS Windows PowerShell detector returned boolean (clipboard unchanged)');
