@@ -18,6 +18,6 @@ export function createActivation(
       reportError: dependencies.reportError,
       containsImage: createProbe(context.asAbsolutePath('scripts/contains-image.ps1')),
     });
-    context.subscriptions.push(dependencies.registerCommand('local.codexOps.paste', smartPaste));
+    context.subscriptions.push(dependencies.registerCommand('local.codexTerminalTool.paste', smartPaste));
   };
 }

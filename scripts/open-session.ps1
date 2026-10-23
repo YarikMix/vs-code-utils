@@ -14,6 +14,6 @@ try {
     }
     Write-Output "Codex session requested: $SessionId"
 } catch {
-    Write-Error "Codex Ops could not open the session: $($_.Exception.Message)"
+    Write-Error "Codex Terminal Tool could not open the session: $($_.Exception.Message)"
     exit 1
 }

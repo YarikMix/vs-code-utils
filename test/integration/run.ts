@@ -75,7 +75,7 @@ async function runWindowsFromWsl(windowsExecutable: string): Promise<void> {
   const windowsTemp = execFileSync(powershell, ['-NoProfile', '-NonInteractive', '-Command', '[IO.Path]::GetTempPath()'], { encoding: 'utf8' }).trim();
   const toWindows = (file: string) => execFileSync('wslpath', ['-w', file], { encoding: 'utf8' }).trim();
   const temp = execFileSync('wslpath', ['-u', windowsTemp], { encoding: 'utf8' }).trim();
-  const stage = await mkdtemp(path.join(temp, 'codex-ops-integration-'));
+  const stage = await mkdtemp(path.join(temp, 'codex-terminal-tool-integration-'));
   console.log(`Windows integration staging: ${stage}`);
   try {
     for (const file of ['package.json', 'README.md', 'dist/extension.cjs', 'dist/test/integration/run.cjs', 'dist/test/integration/suite.cjs', 'scripts/contains-image.ps1', 'scripts/open-session.ps1']) {
@@ -104,7 +104,7 @@ async function main(): Promise<void> {
     await runWindowsFromWsl(executable);
     return;
   }
-  const scratch = await mkdtemp(path.join(os.tmpdir(), 'codex-ops-profile-'));
+  const scratch = await mkdtemp(path.join(os.tmpdir(), 'codex-terminal-tool-profile-'));
   console.log(`Isolated VS Code integration profile: ${scratch}`);
   try {
     const user = path.join(scratch, 'user-data', 'User');

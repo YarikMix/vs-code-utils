@@ -13,7 +13,7 @@ interface Keybinding {
 }
 
 const expectedBindings: Keybinding[] = [
-  { key: 'ctrl+[KeyV]', command: 'local.codexOps.paste', when: 'terminalFocus' },
+  { key: 'ctrl+[KeyV]', command: 'local.codexTerminalTool.paste', when: 'terminalFocus' },
   { key: 'alt+[KeyV]', command: 'workbench.action.terminal.sendSequence', args: { text: '\u001bv' }, when: 'terminalFocus' },
   { key: 'ctrl+[KeyC]', command: 'workbench.action.terminal.copySelection', when: 'terminalFocus && terminalTextSelected' },
   { key: 'ctrl+enter', command: 'workbench.action.terminal.sendSequence', args: { text: '\u001b[13;2u' }, when: 'terminalFocus' },
@@ -96,10 +96,10 @@ async function checkResumeTerminal(): Promise<void> {
     // helper therefore exercises activation wiring and the actual window bridge.
     const sessionId = randomUUID();
     probe = vscode.window.createTerminal({
-      name: 'Codex Ops bridge integration probe',
+      name: 'Codex Terminal Tool bridge integration probe',
       shellPath: path.join(process.env.SystemRoot ?? 'C:\\Windows', 'System32', 'WindowsPowerShell', 'v1.0', 'powershell.exe'),
       shellArgs: ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-Command',
-        `& $env:CODEX_OPS_HELPER -Endpoint $env:CODEX_OPS_ENDPOINT -SessionId '${sessionId}'`],
+        `& $env:CODEX_TERMINAL_TOOL_HELPER -Endpoint $env:CODEX_TERMINAL_TOOL_ENDPOINT -SessionId '${sessionId}'`],
       location: vscode.TerminalLocation.Panel,
     });
     probe.show();
@@ -116,20 +116,21 @@ async function checkResumeTerminal(): Promise<void> {
 }
 
 export async function run(): Promise<void> {
-  const extension = vscode.extensions.getExtension('local.codex-ops');
+  const extension = vscode.extensions.getExtension('local.codex-terminal-tool');
   assert.ok(extension, 'The development extension must be installed');
   await extension.activate();
   assert.equal(extension.isActive, true);
-  assert.ok((await vscode.commands.getCommands(true)).includes('local.codexOps.paste'));
+  assert.ok((await vscode.commands.getCommands(true)).includes('local.codexTerminalTool.paste'));
   assert.equal(extension.packageJSON.main, 'dist/extension.cjs');
   await access(path.join(extension.extensionPath, extension.packageJSON.main));
-  assert.equal(extension.packageJSON.version, '0.3.1');
+  assert.equal(extension.packageJSON.version, '0.4.0');
+  assert.equal(extension.packageJSON.displayName, 'Codex Terminal Tool');
   assert.deepEqual(extension.packageJSON.extensionKind, ['ui']);
-  assert.deepEqual(extension.packageJSON.activationEvents, ['onStartupFinished', 'onCommand:local.codexOps.paste']);
+  assert.deepEqual(extension.packageJSON.activationEvents, ['onStartupFinished', 'onCommand:local.codexTerminalTool.paste']);
   assert.equal(extension.packageJSON.engines.vscode, '^1.85.0');
   assert.deepEqual(extension.packageJSON.contributes.keybindings, expectedBindings);
   const skipShell = vscode.workspace.getConfiguration('terminal.integrated').get<string[]>('commandsToSkipShell');
-  assert.ok(skipShell?.includes('local.codexOps.paste'), 'Effective terminal defaults must skip the shell');
+  assert.ok(skipShell?.includes('local.codexTerminalTool.paste'), 'Effective terminal defaults must skip the shell');
   console.log('PASS compiled runtime activation, command registration, effective defaults and five manifest bindings');
 
   for (const binding of extension.packageJSON.contributes.keybindings as Keybinding[]) {

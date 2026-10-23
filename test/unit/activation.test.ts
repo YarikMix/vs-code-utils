@@ -23,7 +23,7 @@ for (const image of [true, false]) {
       executeCommand: async (id) => { pasted.push(id); },
       reportError: (message) => { throw new Error(message); },
       registerCommand: (id, callback) => {
-        expect(id).toBe('local.codexOps.paste');
+        expect(id).toBe('local.codexTerminalTool.paste');
         handler = callback;
         return disposable;
       },
