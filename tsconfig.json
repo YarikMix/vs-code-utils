@@ -19,6 +19,8 @@
   "include": [
     "src/**/*.ts",
     "scripts/**/*.ts",
-    "test/**/*.ts"
+    "test/**/*.ts",
+    "extensions/codex-smart-paste/src/**/*.ts",
+    "extensions/codex-smart-paste/test/**/*.ts"
   ]
 }

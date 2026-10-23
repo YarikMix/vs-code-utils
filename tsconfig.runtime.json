@@ -1,8 +1,14 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "types": ["node", "vscode"],
+    "types": [
+      "node",
+      "vscode"
+    ],
     "skipLibCheck": false
   },
-  "include": ["src/**/*.ts"]
+  "include": [
+    "src/**/*.ts",
+    "extensions/codex-smart-paste/src/**/*.ts"
+  ]
 }

@@ -1,0 +1,69 @@
+{
+  "name": "codex-smart-paste",
+  "displayName": "Codex Smart Paste",
+  "description": "Route terminal paste to Codex image paste or ordinary text paste on Windows.",
+  "publisher": "local",
+  "version": "0.3.0",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "main": "dist/extension.cjs",
+  "extensionKind": [
+    "ui"
+  ],
+  "activationEvents": [
+    "onCommand:local.codexSmartPaste.paste"
+  ],
+  "contributes": {
+    "configurationDefaults": {
+      "terminal.integrated.commandsToSkipShell": [
+        "local.codexSmartPaste.paste"
+      ]
+    },
+    "commands": [
+      {
+        "command": "local.codexSmartPaste.paste",
+        "title": "Codex: Smart Paste in Terminal"
+      }
+    ],
+    "keybindings": [
+      {
+        "key": "ctrl+[KeyV]",
+        "command": "local.codexSmartPaste.paste",
+        "when": "terminalFocus"
+      },
+      {
+        "key": "alt+[KeyV]",
+        "command": "workbench.action.terminal.sendSequence",
+        "args": {
+          "text": "\u001bv"
+        },
+        "when": "terminalFocus"
+      },
+      {
+        "key": "ctrl+[KeyC]",
+        "command": "workbench.action.terminal.copySelection",
+        "when": "terminalFocus && terminalTextSelected"
+      },
+      {
+        "key": "ctrl+enter",
+        "command": "workbench.action.terminal.sendSequence",
+        "args": {
+          "text": "\u001b[13;2u"
+        },
+        "when": "terminalFocus"
+      },
+      {
+        "key": "shift+enter",
+        "command": "workbench.action.terminal.sendSequence",
+        "args": {
+          "text": "\u001b[13;2u"
+        },
+        "when": "terminalFocus"
+      }
+    ]
+  }
+}

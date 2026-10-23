@@ -13,6 +13,16 @@ await build({
   external: ['vscode'],
 });
 
+await build({
+  entryPoints: [path.join(root, 'extensions/codex-smart-paste/src/extension.ts')],
+  outfile: path.join(root, 'extensions/codex-smart-paste/dist/extension.cjs'),
+  bundle: true,
+  platform: 'node',
+  target: 'node18',
+  format: 'cjs',
+  external: ['vscode'],
+});
+
 for (const name of ['run', 'suite']) {
   await build({
     entryPoints: [path.join(root, `test/integration/${name}.ts`)],
