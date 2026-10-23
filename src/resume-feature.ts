@@ -4,7 +4,7 @@ import { startSessionBridge, type SessionBridge } from './session-bridge.ts';
 type ResumeContext = Pick<ExtensionContext, 'subscriptions' | 'asAbsolutePath' | 'environmentVariableCollection'>;
 
 export interface ResumeFeatureDependencies {
-  editorLocation: TerminalLocation;
+  terminalLocation: TerminalLocation;
   createTerminal(options: TerminalOptions): Pick<Terminal, 'show' | 'sendText'>;
   reportError(message: string): void;
   startBridge?: (launch: (sessionId: string) => void) => Promise<SessionBridge>;
@@ -13,7 +13,7 @@ export interface ResumeFeatureDependencies {
 export async function activateResumeFeature(context: ResumeContext, dependencies: ResumeFeatureDependencies): Promise<void> {
   const bridge = await (dependencies.startBridge ?? startSessionBridge)((sessionId) => {
     try {
-      const terminal = dependencies.createTerminal({ name: 'Codex', location: dependencies.editorLocation });
+      const terminal = dependencies.createTerminal({ name: 'Codex', location: dependencies.terminalLocation });
       terminal.show();
       terminal.sendText(`codex resume ${sessionId}`, true);
     } catch {

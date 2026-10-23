@@ -11,7 +11,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   })(context);
   try {
     await activateResumeFeature(context, {
-      editorLocation: vscode.TerminalLocation.Editor,
+      terminalLocation: vscode.TerminalLocation.Panel,
       createTerminal: (options) => vscode.window.createTerminal(options),
       reportError: (message) => { void vscode.window.showErrorMessage(message); },
     });

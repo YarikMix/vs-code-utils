@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { randomUUID } from 'node:crypto';
 import { access } from 'node:fs/promises';
 import path from 'node:path';
 import * as vscode from 'vscode';
@@ -76,6 +77,44 @@ async function checkSequence(binding: Keybinding): Promise<void> {
   }
 }
 
+async function checkResumeTerminal(): Promise<void> {
+  let probe: vscode.Terminal | undefined;
+  let resumed: vscode.Terminal | undefined;
+  let listener: vscode.Disposable | undefined;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    const opened = new Promise<vscode.Terminal>((resolve, reject) => {
+      timer = setTimeout(() => reject(new Error('Window bridge did not open a Codex terminal in this Extension Host')), 15_000);
+      listener = vscode.window.onDidOpenTerminal((terminal) => {
+        if (terminal.name === 'Codex') {
+          resumed = terminal;
+          resolve(terminal);
+        }
+      });
+    });
+    // A real shell receives this window's environmentVariableCollection; the
+    // helper therefore exercises activation wiring and the actual window bridge.
+    const sessionId = randomUUID();
+    probe = vscode.window.createTerminal({
+      name: 'Codex Ops bridge integration probe',
+      shellPath: path.join(process.env.SystemRoot ?? 'C:\\Windows', 'System32', 'WindowsPowerShell', 'v1.0', 'powershell.exe'),
+      shellArgs: ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-Command',
+        `& $env:CODEX_OPS_HELPER -Endpoint $env:CODEX_OPS_ENDPOINT -SessionId '${sessionId}'`],
+      location: vscode.TerminalLocation.Panel,
+    });
+    probe.show();
+    const terminal = await opened;
+    assert.ok(vscode.window.terminals.includes(terminal), 'Resumed terminal must belong to this Extension Host');
+    assert.equal(terminal.creationOptions.location, vscode.TerminalLocation.Panel, 'Window bridge must create a bottom-panel terminal');
+    console.log('PASS real per-window helper bridge opens a Codex terminal in this Extension Host with TerminalLocation.Panel');
+  } finally {
+    clearTimeout(timer);
+    listener?.dispose();
+    resumed?.dispose();
+    probe?.dispose();
+  }
+}
+
 export async function run(): Promise<void> {
   const extension = vscode.extensions.getExtension('local.codex-ops');
   assert.ok(extension, 'The development extension must be installed');
@@ -84,7 +123,7 @@ export async function run(): Promise<void> {
   assert.ok((await vscode.commands.getCommands(true)).includes('local.codexOps.paste'));
   assert.equal(extension.packageJSON.main, 'dist/extension.cjs');
   await access(path.join(extension.extensionPath, extension.packageJSON.main));
-  assert.equal(extension.packageJSON.version, '0.3.0');
+  assert.equal(extension.packageJSON.version, '0.3.1');
   assert.deepEqual(extension.packageJSON.extensionKind, ['ui']);
   assert.deepEqual(extension.packageJSON.activationEvents, ['onStartupFinished', 'onCommand:local.codexOps.paste']);
   assert.equal(extension.packageJSON.engines.vscode, '^1.85.0');
@@ -101,6 +140,7 @@ export async function run(): Promise<void> {
   await access(scriptPath);
   await access(path.join(extension.extensionPath, 'scripts', 'open-session.ps1'));
   if (process.platform === 'win32') {
+    await checkResumeTerminal();
     assert.equal(typeof await containsImage(scriptPath), 'boolean');
     console.log('PASS Windows PowerShell detector returned boolean (clipboard unchanged)');
   } else {
