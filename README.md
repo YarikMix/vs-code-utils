@@ -1,44 +1,32 @@
-# Codex Terminal Tool
+# Codex extensions for Windows VS Code
 
-Локальное расширение Windows VS Code для работы с Codex во встроенных терминалах, включая WSL. Оно сохраняет Smart Paste и позволяет агенту открыть найденную сессию Codex в новой вкладке нижней панели Terminal текущего окна VS Code.
+Два независимых расширения для Codex во встроенном терминале Windows VS Code, включая WSL:
 
-## Запуск сессии из терминала WSL
+| Расширение | ID | VSIX | Назначение |
+| --- | --- | --- | --- |
+| [Codex Smart Paste](extensions/codex-smart-paste/README.md) | `local.codex-smart-paste` | `codex-smart-paste-0.3.0.vsix` | Буфер обмена и пять терминальных привязок |
+| [Codex Terminal Tool](extensions/codex-terminal-tool/README.md) | `local.codex-terminal-tool` | `codex-terminal-tool-0.5.0.vsix` | `codex resume <UUID>` в новой вкладке панели текущего окна |
 
-В терминале, созданном после активации расширения, агент выполняет:
+Для обеих функций установите оба VSIX через **Extensions: Install from VSIX...** в локальном Windows VS Code (**Local — Installed**). Оба расширения работают в Windows UI extension host; установка только в WSL не подходит. Bun и Node.js нужны только разработчику. Инструкции сочетаний клавиш и helper находятся в README соответствующего пакета.
 
-```sh
-powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "$CODEX_TERMINAL_TOOL_HELPER" -Endpoint "$CODEX_TERMINAL_TOOL_ENDPOINT" -SessionId 01a14ff0-3f2d-7d71-b4e5-0b63839ec381
+## Миграция
+
+Обновите прежний объединённый `local.codex-terminal-tool` 0.4.0 до 0.5.0 и отдельно установите `local.codex-smart-paste` 0.3.0. Версия Terminal Tool 0.5.0 больше не содержит Smart Paste, его команду и привязки. Не оставляйте старую объединённую версию рядом с новым Smart Paste. Если установлен исторический `local.codex-ops`, удалите его: его Ctrl+V конкурирует с новой командой.
+
+```powershell
+& "$env:LOCALAPPDATA\Programs\Microsoft VS Code\bin\code.cmd" --uninstall-extension local.codex-ops
+& "$env:LOCALAPPDATA\Programs\Microsoft VS Code\bin\code.cmd" --install-extension 'C:\path\to\codex-terminal-tool-0.5.0.vsix' --force
+& "$env:LOCALAPPDATA\Programs\Microsoft VS Code\bin\code.cmd" --install-extension 'C:\path\to\codex-smart-paste-0.3.0.vsix' --force
+& "$env:LOCALAPPDATA\Programs\Microsoft VS Code\bin\code.cmd" --list-extensions --show-versions
 ```
 
-Замените UUID на ID нужной сессии. Расширение создаст новый терминал в **нижней панели Terminal того же окна VS Code**, покажет его в списке вкладок справа и запустит `codex resume <UUID>`. Команда PowerShell возвращает ошибку, если запрос не дошёл до расширения. Агент может вызывать её через обычный shell tool; изменения Codex CLI не требуются.
+Команда удаления нужна, только если старый ID установлен. Если сборка находится в WSL, сначала скопируйте VSIX в обычный каталог Windows, например `%TEMP%`: прямой UNC-путь может блокироваться CLI. Выполните **Developer: Reload Window**, когда это не прервёт активные сессии Codex, затем создайте новый WSL-терминал для переменных Terminal Tool. Рабочий `keybindings.json` менять не требуется; проверьте собственные переопределения при конфликте сочетаний.
 
-Для каждого окна расширение поднимает собственный локальный канал на `127.0.0.1` со случайным токеном. Адрес передаётся только новым терминалам этого окна через `CODEX_TERMINAL_TOOL_ENDPOINT`; путь к скрипту — через `CODEX_TERMINAL_TOOL_HELPER`. Запрос принимает только UUID, поэтому в терминал нельзя передать произвольную команду через этот канал. Переменные отсутствуют в уже работающих терминалах: после установки и **Developer: Reload Window** откройте новый терминал или новую сессию Codex. При нескольких окнах запускайте команду из терминала нужного окна.
-
-Новый терминал использует профиль и рабочую папку, заданные VS Code для этого окна. В WSL-окне с профилем WSL `codex resume` запускается в WSL. Если переменные пусты, проверьте, что `Codex Terminal Tool` установлен в **Local — Installed**, расширение активно и терминал был создан после его активации.
-
-## Smart Paste
-
-| Сочетание в терминале | Действие |
-| --- | --- |
-| Ctrl+V / Ctrl+М | Если в буфере есть изображение — отправить Codex Alt+v; иначе — штатная вставка текста VS Code |
-| Alt+V / Alt+М | Отправить Codex Alt+v для вставки изображения |
-| Ctrl+C / Ctrl+С с выделением | Копировать выделенный текст терминала |
-| Ctrl+C без выделения | Сохраняется штатное прерывание |
-| Ctrl+Enter, Shift+Enter | Отправить `ESC[13;2u` для переноса строки в Codex |
-
-V и C заданы физическими клавишами `[KeyV]` и `[KeyC]`. Привязки действуют только при фокусе терминала. Расширение добавляет `local.codexTerminalTool.paste` в значение по умолчанию `terminal.integrated.commandsToSkipShell`. Если вы задаёте собственный массив этой настройки, включите команду вручную. `terminal.integrated.sendKeybindingsToShell: true` может перехватить сочетание раньше расширения.
-
-Проверка изображения выполняется через PowerShell на Windows стороне VS Code. Буфер не сохраняется и не меняется; проверка возвращает только `true`/`false`. Таймаут — 3 секунды. При ошибке автоматической вставки нет.
-
-## Установка
-
-Установите `codex-terminal-tool-0.4.0.vsix` через **Extensions: Install from VSIX...** в локальном Windows VS Code либо Windows CLI `code.cmd --install-extension <путь-к-vsix> --force`. Технический ID нового расширения — `local.codex-terminal-tool`. Прежнее расширение `local.codex-ops` удалите, иначе его Ctrl+V-привязка останется конкурентом новой команды. После установки выполните **Developer: Reload Window** и откройте новый WSL-терминал. Bun и Node.js пользователю расширения не нужны.
-
-Если VSIX собран в WSL, скопируйте его в обычный каталог Windows перед установкой. Прямой UNC-путь `\\wsl.localhost` может блокироваться Windows CLI. Не завершайте работающие сессии Codex ради миграции: установку и **Developer: Reload Window** выполняйте, когда они не прервут текущую работу. После перезагрузки создайте новый WSL-терминал, чтобы получить новые переменные окружения.
+Расширения удаляются независимо: `code.cmd --uninstall-extension local.codex-smart-paste` оставляет мост Terminal Tool; `code.cmd --uninstall-extension local.codex-terminal-tool` оставляет Smart Paste. После удаления перезагрузите окно в удобный момент. Ограничение окружения общего daemon Codex и вариант `--no-daemon` описаны в [Terminal Tool](extensions/codex-terminal-tool/README.md).
 
 ## Разработка
 
-Нужны Bun 1.4.x и Node.js 22+ для тестового VS Code и упаковки.
+Нужны Bun 1.4.x и Node.js 22+. Все команды выполняются из корня:
 
 ```sh
 bun install --frozen-lockfile
@@ -49,6 +37,21 @@ VSCODE_EXECUTABLE_PATH='/mnt/c/Users/olegg/AppData/Local/Programs/Microsoft VS C
 bun run package
 ```
 
-Для интеграции замените путь на установленный Windows `Code.exe`. Тест запускает отдельный Extension Development Host с временным профилем и не использует текущий профиль VS Code. Unit-тесты проверяют локальный канал, валидацию запроса, выбор вкладки и окружение; Electron-тест проверяет активацию и Smart Paste. Реальное взаимодействие WSL, PowerShell и нескольких окон нужно проверить вручную после установки.
+`bun run package` создаёт оба VSIX в корне. Для отдельной упаковки после сборки используйте `bun run package:smart-paste` или `bun run package:terminal-tool`. Runtime каждого пакета собирается отдельно в `extensions/<name>/dist/extension.cjs`, CommonJS для Node 18, с внешним модулем `vscode`; требуется VS Code `^1.85.0`. Каждый пакет содержит только свой runtime и один PowerShell-скрипт.
 
-Исходники — `src/*.ts`, Windows-скрипты — `scripts/*.ps1`. Runtime собирается как CommonJS для Node 18 с внешним модулем `vscode`; расширение требует VS Code `^1.85.0`.
+Интеграционный runner загружает оба пакета, затем каждый отдельно, в трёх временных профилях с отдельными каталогами расширений. На Windows он проверяет реальные PowerShell-ресурсы и мост; Pseudoterminal проверяет точные ESC-последовательности. Runner не меняет рабочий профиль или настройки обновлений пользователя. В WSL задайте путь к установленному Windows `Code.exe`, как в примере. Физические клавиши, изображение в Codex и маршрутизацию в двух WSL-окнах одного workspace проверяйте отдельно, сохраняя активные сессии.
+
+Исторические документы в `docs/superpowers/` сохранены. Упомянутые в старых спеках и планах корневые `src/` и `scripts/*.ps1` относятся к прежнему единому расширению; актуальные пути находятся в `extensions/codex-smart-paste/` и `extensions/codex-terminal-tool/`.
+
+Для автоматической проверки двух WSL-окон создайте временную пустую папку и укажите установленное локальное расширение Remote-WSL. Оба тестовых окна используют один workspace, отдельные профили и свежие случайные UUID; чужие сессии не возобновляются. Проверка подтверждает маршрутизацию helper в свою панель, но не успешное возобновление существующей истории Codex.
+
+```sh
+mkdir -p /tmp/codex-split-wsl-check
+CODEX_INTEGRATION_WSL_DISTRO=Ubuntu \
+CODEX_INTEGRATION_WSL_WORKSPACE=/tmp/codex-split-wsl-check \
+CODEX_INTEGRATION_WSL_EXTENSION='/mnt/c/Users/olegg/.vscode/extensions/ms-vscode-remote.remote-wsl-1.104.6' \
+VSCODE_EXECUTABLE_PATH='/mnt/c/Users/olegg/AppData/Local/Programs/Microsoft VS Code/Code.exe' \
+bun run test:integration
+```
+
+Замените дистрибутив и пути на свои. Runner копирует Remote-WSL во временные каталоги расширений; рабочий профиль не используется. После проверки удалите созданную пустую папку.

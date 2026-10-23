@@ -1,66 +1,20 @@
 {
-  "name": "codex-terminal-tool",
-  "displayName": "Codex Terminal Tool",
-  "description": "Codex terminal controls for VS Code: smart paste and session resume.",
-  "publisher": "local",
-  "version": "0.4.0",
-  "engines": {
-    "vscode": "^1.85.0"
-  },
-  "categories": ["Other"],
-  "main": "dist/extension.cjs",
-  "extensionKind": ["ui"],
-  "activationEvents": ["onStartupFinished", "onCommand:local.codexTerminalTool.paste"],
+  "name": "vs-code-utils",
+  "private": true,
+  "workspaces": [
+    "extensions/*"
+  ],
+  "packageManager": "bun@1.4.2",
   "scripts": {
     "test": "bun run test:unit",
     "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.runtime.json",
     "build": "bun scripts/build.ts",
-    "test:unit": "bun test",
+    "test:unit": "bun test extensions/*/test/unit test/unit",
     "test:integration": "bun run build && node dist/test/integration/run.cjs",
-    "package": "bun run typecheck && bun run build && vsce package --no-dependencies --allow-missing-repository --skip-license --out codex-terminal-tool-0.4.0.vsix"
+    "package": "bun run typecheck && bun run build && bun run package:smart-paste && bun run package:terminal-tool",
+    "package:smart-paste": "cd extensions/codex-smart-paste && vsce package --no-dependencies --allow-missing-repository --skip-license --out ../../codex-smart-paste-0.3.0.vsix",
+    "package:terminal-tool": "cd extensions/codex-terminal-tool && vsce package --no-dependencies --allow-missing-repository --skip-license --out ../../codex-terminal-tool-0.5.0.vsix"
   },
-  "contributes": {
-    "configurationDefaults": {
-      "terminal.integrated.commandsToSkipShell": ["local.codexTerminalTool.paste"]
-    },
-    "commands": [
-      {
-        "command": "local.codexTerminalTool.paste",
-        "title": "Codex: Smart Paste in Terminal"
-      }
-    ],
-    "keybindings": [
-      {
-        "key": "ctrl+[KeyV]",
-        "command": "local.codexTerminalTool.paste",
-        "when": "terminalFocus"
-      },
-      {
-        "key": "alt+[KeyV]",
-        "command": "workbench.action.terminal.sendSequence",
-        "args": { "text": "\u001bv" },
-        "when": "terminalFocus"
-      },
-      {
-        "key": "ctrl+[KeyC]",
-        "command": "workbench.action.terminal.copySelection",
-        "when": "terminalFocus && terminalTextSelected"
-      },
-      {
-        "key": "ctrl+enter",
-        "command": "workbench.action.terminal.sendSequence",
-        "args": { "text": "\u001b[13;2u" },
-        "when": "terminalFocus"
-      },
-      {
-        "key": "shift+enter",
-        "command": "workbench.action.terminal.sendSequence",
-        "args": { "text": "\u001b[13;2u" },
-        "when": "terminalFocus"
-      }
-    ]
-  },
-  "packageManager": "bun@1.4.2",
   "devDependencies": {
     "@types/bun": "1.4.3",
     "@types/node": "18.19.130",
