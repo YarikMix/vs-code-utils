@@ -14,6 +14,14 @@
         "typescript": "7.0.2",
       },
     },
+    "extensions/codex-smart-paste": {
+      "name": "codex-smart-paste",
+      "version": "0.3.0",
+    },
+    "extensions/codex-terminal-tool": {
+      "name": "codex-terminal-tool",
+      "version": "0.5.0",
+    },
   },
   "packages": {
     "@azure/abort-controller": ["@azure/abort-controller@2.2.0", "", { "dependencies": { "tslib": "^2.6.2" } }, "sha512-fNAjWnA/nZ2jz31kxR/AqRaUT8ewHBw/WuBIosK0moMy1C9e5ValbDfFdIxJzVOOYaYkV/b2F1S4H/aHiqfVQg=="],
@@ -235,6 +243,10 @@
     "cli-spinners": ["cli-spinners@2.9.2", "", {}, "sha512-ywqV+5MmyL4E7ybXgKys4DugZbX0FC6LnwrhjuykIjnK9k8OQacQ7axGKnjDXWNhns0xot3bZI5h55H8yo9cJg=="],
 
     "cockatiel": ["cockatiel@3.2.1", "", {}, "sha512-gfrHV6ZPkquExvMh9IOkKsBzNDk6sDuZ6DdBGUBkvFnTCqCxzpuq48RySgP0AnaqQkw2zynOFj9yly6T1Q2G5Q=="],
+
+    "codex-smart-paste": ["codex-smart-paste@workspace:extensions/codex-smart-paste"],
+
+    "codex-terminal-tool": ["codex-terminal-tool@workspace:extensions/codex-terminal-tool"],
 
     "commander": ["commander@12.1.0", "", {}, "sha512-Vw8qHK3bZM9y/P10u3Vib8o/DdkvA2OtPtZvD871QKjy74Wj1WSKFILMPRPSdUSx5RFK1arlJzEtA4PkFgnbuA=="],
 

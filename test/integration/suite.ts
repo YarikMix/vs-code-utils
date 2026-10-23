@@ -3,7 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { access } from 'node:fs/promises';
 import path from 'node:path';
 import * as vscode from 'vscode';
-import { containsImage } from '../../src/clipboard.ts';
+import { containsImage } from '../../extensions/codex-smart-paste/src/clipboard.ts';
 
 interface Keybinding {
   key: string;

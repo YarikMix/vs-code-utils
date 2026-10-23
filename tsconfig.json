@@ -17,10 +17,9 @@
     "skipLibCheck": true
   },
   "include": [
-    "src/**/*.ts",
     "scripts/**/*.ts",
     "test/**/*.ts",
-    "extensions/codex-smart-paste/src/**/*.ts",
-    "extensions/codex-smart-paste/test/**/*.ts"
+    "extensions/*/src/**/*.ts",
+    "extensions/*/test/**/*.ts"
   ]
 }

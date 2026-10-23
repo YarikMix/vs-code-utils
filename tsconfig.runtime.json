@@ -8,7 +8,6 @@
     "skipLibCheck": false
   },
   "include": [
-    "src/**/*.ts",
-    "extensions/codex-smart-paste/src/**/*.ts"
+    "extensions/*/src/**/*.ts"
   ]
 }

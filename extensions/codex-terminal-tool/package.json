@@ -1,0 +1,20 @@
+{
+  "name": "codex-terminal-tool",
+  "displayName": "Codex Terminal Tool",
+  "description": "Open Codex sessions in a panel terminal of the current VS Code window.",
+  "publisher": "local",
+  "version": "0.5.0",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "main": "dist/extension.cjs",
+  "extensionKind": [
+    "ui"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ]
+}
