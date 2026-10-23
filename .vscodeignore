@@ -3,3 +3,4 @@
 !README.md
 !dist/extension.cjs
 !scripts/contains-image.ps1
+!scripts/open-session.ps1
