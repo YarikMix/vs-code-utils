@@ -1,38 +1,38 @@
 {
-  "name": "codex-ops",
-  "displayName": "Codex Ops",
+  "name": "codex-terminal-tool",
+  "displayName": "Codex Terminal Tool",
   "description": "Codex terminal controls for VS Code: smart paste and session resume.",
   "publisher": "local",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "engines": {
     "vscode": "^1.85.0"
   },
   "categories": ["Other"],
   "main": "dist/extension.cjs",
   "extensionKind": ["ui"],
-  "activationEvents": ["onStartupFinished", "onCommand:local.codexOps.paste"],
+  "activationEvents": ["onStartupFinished", "onCommand:local.codexTerminalTool.paste"],
   "scripts": {
     "test": "bun run test:unit",
     "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.runtime.json",
     "build": "bun scripts/build.ts",
     "test:unit": "bun test",
     "test:integration": "bun run build && node dist/test/integration/run.cjs",
-    "package": "bun run typecheck && bun run build && vsce package --no-dependencies --allow-missing-repository --skip-license --out codex-ops-0.3.1.vsix"
+    "package": "bun run typecheck && bun run build && vsce package --no-dependencies --allow-missing-repository --skip-license --out codex-terminal-tool-0.4.0.vsix"
   },
   "contributes": {
     "configurationDefaults": {
-      "terminal.integrated.commandsToSkipShell": ["local.codexOps.paste"]
+      "terminal.integrated.commandsToSkipShell": ["local.codexTerminalTool.paste"]
     },
     "commands": [
       {
-        "command": "local.codexOps.paste",
+        "command": "local.codexTerminalTool.paste",
         "title": "Codex: Smart Paste in Terminal"
       }
     ],
     "keybindings": [
       {
         "key": "ctrl+[KeyV]",
-        "command": "local.codexOps.paste",
+        "command": "local.codexTerminalTool.paste",
         "when": "terminalFocus"
       },
       {

@@ -17,18 +17,18 @@ export async function activateResumeFeature(context: ResumeContext, dependencies
       terminal.show();
       terminal.sendText(`codex resume ${sessionId}`, true);
     } catch {
-      dependencies.reportError('Codex Ops: не удалось открыть терминал для сессии Codex.');
+      dependencies.reportError('Codex Terminal Tool: не удалось открыть терминал для сессии Codex.');
       throw new Error('Could not open terminal');
     }
   });
   const variables = context.environmentVariableCollection;
   variables.persistent = false;
-  variables.replace('CODEX_OPS_ENDPOINT', bridge.endpoint);
-  variables.replace('CODEX_OPS_HELPER', context.asAbsolutePath('scripts/open-session.ps1'));
+  variables.replace('CODEX_TERMINAL_TOOL_ENDPOINT', bridge.endpoint);
+  variables.replace('CODEX_TERMINAL_TOOL_HELPER', context.asAbsolutePath('scripts/open-session.ps1'));
   context.subscriptions.push({
     dispose: () => {
-      variables.delete('CODEX_OPS_ENDPOINT');
-      variables.delete('CODEX_OPS_HELPER');
+      variables.delete('CODEX_TERMINAL_TOOL_ENDPOINT');
+      variables.delete('CODEX_TERMINAL_TOOL_HELPER');
       void bridge.close();
     },
   });

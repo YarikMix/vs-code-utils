@@ -16,6 +16,6 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       reportError: (message) => { void vscode.window.showErrorMessage(message); },
     });
   } catch {
-    void vscode.window.showErrorMessage('Codex Ops: не удалось запустить канал управления сессиями.');
+    void vscode.window.showErrorMessage('Codex Terminal Tool: не удалось запустить канал управления сессиями.');
   }
 }

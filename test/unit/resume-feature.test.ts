@@ -10,7 +10,7 @@ test('activation exposes a window-specific bridge and resumes into a panel termi
   const actions: unknown[] = [];
   const context = {
     subscriptions: [] as ExtensionContext['subscriptions'],
-    asAbsolutePath: (relative: string) => `C:\\Extensions\\Codex Ops\\${relative.replaceAll('/', '\\')}`,
+    asAbsolutePath: (relative: string) => `C:\\Extensions\\Codex Terminal Tool\\${relative.replaceAll('/', '\\')}`,
     environmentVariableCollection: {
       get persistent() { return persistent; },
       set persistent(value: boolean) { persistent = value; },
@@ -35,8 +35,8 @@ test('activation exposes a window-specific bridge and resumes into a panel termi
   };
   await activateResumeFeature(context, dependencies);
   expect(persistent).toBe(false);
-  expect(variables.get('CODEX_OPS_ENDPOINT')).toBe('http://127.0.0.1:12345/token');
-  expect(variables.get('CODEX_OPS_HELPER')).toBe('C:\\Extensions\\Codex Ops\\scripts\\open-session.ps1');
+  expect(variables.get('CODEX_TERMINAL_TOOL_ENDPOINT')).toBe('http://127.0.0.1:12345/token');
+  expect(variables.get('CODEX_TERMINAL_TOOL_HELPER')).toBe('C:\\Extensions\\Codex Terminal Tool\\scripts\\open-session.ps1');
   expect(launch).toBeDefined();
   launch!('01a14ff0-3f2d-7d71-b4e5-0b63839ec381');
   expect(actions).toEqual([
